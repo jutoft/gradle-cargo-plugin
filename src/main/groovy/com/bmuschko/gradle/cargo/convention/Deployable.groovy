@@ -15,22 +15,35 @@
  */
 package com.bmuschko.gradle.cargo.convention
 
-
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.InputFile
 
 /**
  * Defines Deployable convention.
  */
 class Deployable implements Serializable {
-
-    @InputFiles
-    FileCollection files
+    @InputFile
+    RegularFileProperty file
 
     @Input
-    String context
+    Property<String> context
+
+    @javax.inject.Inject
+    Deployable(ObjectFactory objectFactory) {
+        file = objectFactory.fileProperty()
+        context = objectFactory.property(String)
+    }
+
+    void setFile(File file) {
+        this.file.set(file)
+    }
+
+    void setContext(String context) {
+        this.context.set(context)
+    }
 
     @Internal
     File getFile() {

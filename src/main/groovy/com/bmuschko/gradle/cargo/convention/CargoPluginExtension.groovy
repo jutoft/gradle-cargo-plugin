@@ -15,24 +15,29 @@
  */
 package com.bmuschko.gradle.cargo.convention
 
-import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+
+import java.time.Duration
 
 /**
  * Defines Cargo extension.
  */
 class CargoPluginExtension {
+    final Property<String> containerId
+    final Property<Integer> port
+    final Property<Duration> timeout
+    final ListProperty<Deployable> deployables
+    private ObjectFactory objectFactory
 
-    private final Project project
-
-    String containerId
-    Integer port = 8080
-    Integer timeout
-    def deployables = []
-    CargoRemoteTaskConvention remote = new CargoRemoteTaskConvention()
-    CargoLocalTaskConvention local = new CargoLocalTaskConvention()
-
-    CargoPluginExtension(Project project) {
-        this.project = project
+    CargoPluginExtension(ObjectFactory objectFactory) {
+        this.objectFactory = objectFactory
+        containerId = objectFactory.property(String)
+        port = objectFactory.property(Integer)
+        port.set(8080)
+        timeout = objectFactory.property(Duration)
+        deployables = objectFactory.listProperty(Deployable)
     }
 
     def cargo(Closure closure) {
@@ -40,23 +45,12 @@ class CargoPluginExtension {
         closure()
     }
 
+
     def deployable(Closure closure) {
         closure.resolveStrategy = Closure.DELEGATE_FIRST
         def deployableClosureDelegate = new DeployableClosureDelegate(project)
         closure.delegate = deployableClosureDelegate
         deployables << deployableClosureDelegate.deployable
-        closure()
-    }
-
-    def remote(Closure closure) {
-        closure.resolveStrategy = Closure.DELEGATE_FIRST
-        closure.delegate = remote
-        closure()
-    }
-
-    def local(Closure closure) {
-        closure.resolveStrategy = Closure.DELEGATE_FIRST
-        closure.delegate = local
         closure()
     }
 

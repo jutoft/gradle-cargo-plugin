@@ -20,6 +20,7 @@ import com.bmuschko.gradle.cargo.DeployableTypeFactory
 import com.bmuschko.gradle.cargo.convention.Deployable
 import com.bmuschko.gradle.cargo.tasks.AbstractCargoContainerTask
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 
 /**
@@ -32,25 +33,30 @@ class RemoteCargoContainerTask extends AbstractCargoContainerTask {
      * Protocol on which the container is listening to. Defaults to 'http'.
      */
     @Input
-    String protocol = 'http'
+    Property<String> protocol = project.objects.property(String)
 
     /**
      * Host name on which the container listens to. Defaults to 'localhost'.
      */
     @Input
-    String hostname = 'localhost'
+    Property<String> hostname = project.objects.property(String)
 
     /**
      * Username to use to authenticate against a remote container.
      */
     @Input
-    String username
+    Property<String> username = project.objects.property(String)
 
     /**
      * Password to use to authenticate against a remote container.
      */
     @Input
-    String password
+    Property<String> password = project.objects.property(String)
+
+    RemoteCargoContainerTask() {
+        protocol.set("http")
+        hostname.set("localhost")
+    }
 
     @Override
     void validateConfiguration() {
@@ -64,7 +70,7 @@ class RemoteCargoContainerTask extends AbstractCargoContainerTask {
                             + " does not exist")
                 }
 
-                if(DeployableType.EXPLODED == DeployableTypeFactory.instance.getType(deployable.file)) {
+                if(DeployableType.EXPLODED == DeployableTypeFactory.instance.getType(deployable.get())) {
                     throw new InvalidUserDataException("Deployable type: EXPLODED is invalid for remote deployment")
                 }
 
@@ -75,14 +81,14 @@ class RemoteCargoContainerTask extends AbstractCargoContainerTask {
 
     @Override
     void runAction() {
-        logger.info "Starting action '${getAction()}' for remote container '${getContainerId()}' on '${getProtocol()}://${getHostname()}:${getPort()}'"
+        logger.info "Starting action '${getAction()}' for remote container '${getContainerId().get()}' on '${getProtocol().get()}://${getHostname().get()}:${getPort().get()}'"
 
         ant.taskdef(resource: AbstractCargoContainerTask.CARGO_TASKS, classpath: getClasspath().asPath)
         ant.cargo(containerId: getContainerId(), type: 'remote', action: getAction()) {
             configuration(type: 'runtime') {
-                property(name: 'cargo.protocol', value: getProtocol())
-                property(name: 'cargo.hostname', value: getHostname())
-                property(name: AbstractCargoContainerTask.CARGO_SERVLET_PORT, value: getPort())
+                property(name: 'cargo.protocol', value: getProtocol().get())
+                property(name: 'cargo.hostname', value: getHostname().get())
+                property(name: AbstractCargoContainerTask.CARGO_SERVLET_PORT, value: getPort().get())
                 setContainerSpecificProperties()
 
                 if(getUsername() && getPassword()) {
@@ -91,7 +97,7 @@ class RemoteCargoContainerTask extends AbstractCargoContainerTask {
                 }
 
                 getDeployables().each { Deployable deployable ->
-                    DeployableType deployableType = DeployableTypeFactory.instance.getType(deployable.file)
+                    DeployableType deployableType = DeployableTypeFactory.instance.getType(deployable.file.get())
 
                     if(deployable.context) {
                         // For the undeploy action do not set a file attribute

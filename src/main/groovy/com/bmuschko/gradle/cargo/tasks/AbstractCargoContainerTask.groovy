@@ -19,7 +19,10 @@ import com.bmuschko.gradle.cargo.convention.Deployable
 import com.bmuschko.gradle.cargo.util.LoggingHandler
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
@@ -39,7 +42,7 @@ abstract class AbstractCargoContainerTask extends DefaultTask {
      * The Cargo container identifier.
      */
     @Input
-    String containerId
+    Property<String> containerId = project.objects.property(String)
 
     /**
      * The action to run for the container.
@@ -51,7 +54,7 @@ abstract class AbstractCargoContainerTask extends DefaultTask {
      * Port on which the Servlet/JSP container listens to.
      */
     @Input
-    Integer port = 8080
+    Property<Integer> port = project.objects.property(Integer)
 
     @Input
     @Optional
@@ -60,20 +63,31 @@ abstract class AbstractCargoContainerTask extends DefaultTask {
     /**
      * The classpath containing the Cargo Ant tasks.
      */
+    ConfigurableFileCollection classpath = project.layout.configurableFiles()
+
+    @Internal
+    ConfigurableFileCollection alternativeClasspath = project.layout.configurableFiles()
+
     @InputFiles
-    FileCollection classpath
+    ConfigurableFileCollection getClasspath() {
+        if(classpath.empty) {
+            alternativeClasspath
+        } else {
+            classpath
+        }
+    }
 
     /**
      * The list of deployable artifacts.
      */
     @Nested
-    List<Deployable> deployables = []
+    ListProperty<Deployable> deployables = project.objects.listProperty(Deployable)
 
     /**
      * Container properties.
      */
     @Input
-    Map<String, Object> containerProperties = [:]
+    MapProperty<String, Object> containerProperties = project.objects.mapProperty(String, Object)
 
     AbstractCargoContainerTask() {
         group = CARGO_TASK_GROUP
@@ -94,15 +108,15 @@ abstract class AbstractCargoContainerTask extends DefaultTask {
     }
 
     void validateConfiguration() {
-        if(!getDeployables()) {
-            throw new InvalidUserDataException('No deployables assigned!')
+        if(!containerId.isPresent()) {
+            throw new InvalidUserDataException('Container ID was not defined.')
         }
     }
 
     protected void setContainerSpecificProperties() {
-        logger.info "Container properties = ${getContainerProperties()}"
+        logger.info "Container properties = ${getContainerProperties().get()}"
 
-        getContainerProperties().each { key, value ->
+        getContainerProperties().get().each { key, value ->
             ant.property(name: key, value: value)
         }
     }
