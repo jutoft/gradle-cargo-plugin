@@ -15,9 +15,10 @@
  */
 package com.bmuschko.gradle.cargo.convention
 
-import org.gradle.api.model.ObjectFactory
+import org.gradle.api.Project
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
 
 import java.time.Duration
 
@@ -29,15 +30,15 @@ class CargoPluginExtension {
     final Property<Integer> port
     final Property<Duration> timeout
     final ListProperty<Deployable> deployables
-    private ObjectFactory objectFactory
+    private Project project
 
-    CargoPluginExtension(ObjectFactory objectFactory) {
-        this.objectFactory = objectFactory
-        containerId = objectFactory.property(String)
-        port = objectFactory.property(Integer)
+    CargoPluginExtension(Project project) {
+        this.project = project
+        containerId = project.objects.property(String)
+        port = project.objects.property(Integer)
         port.set(8080)
-        timeout = objectFactory.property(Duration)
-        deployables = objectFactory.listProperty(Deployable)
+        timeout = project.objects.property(Duration)
+        deployables = project.objects.listProperty(Deployable)
     }
 
     def cargo(Closure closure) {
@@ -50,22 +51,29 @@ class CargoPluginExtension {
         closure.resolveStrategy = Closure.DELEGATE_FIRST
         def deployableClosureDelegate = new DeployableClosureDelegate(project)
         closure.delegate = deployableClosureDelegate
-        deployables << deployableClosureDelegate.deployable
+        deployables.add(deployableClosureDelegate.deployable)
         closure()
     }
 
     private static class DeployableClosureDelegate {
 
         @Delegate
-        final Deployable deployable = new Deployable()
+        final Deployable deployable
+
+        @Internal
         private final Project project
 
         DeployableClosureDelegate(Project project) {
             this.project = project
+            this.deployable = new Deployable(project.objects, project.layout)
         }
 
         void setFile(Object file) {
-            deployable.files = project.files(file)
+            deployable.configuration.setFrom(project.files(file))
+        }
+
+        void setContext(String context) {
+            deployable.context.set(context)
         }
     }
 

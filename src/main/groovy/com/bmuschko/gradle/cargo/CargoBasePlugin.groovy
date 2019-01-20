@@ -52,7 +52,7 @@ class CargoBasePlugin implements Plugin<Project> {
                 .setTransitive(true)
                 .setDescription('The Cargo daemon client libraries to be used for this project.')
 
-        def extension = project.extensions.create(EXTENSION_NAME, CargoPluginExtension, project.objects)
+        def extension = project.extensions.create(EXTENSION_NAME, CargoPluginExtension, project)
 
         configureAbstractContainerTask(project, extension)
         configureEarPlugin(project, extension)
@@ -85,7 +85,7 @@ class CargoBasePlugin implements Plugin<Project> {
         project.tasks.withType(AbstractCargoContainerTask, { AbstractCargoContainerTask task ->
             task.containerId.set(cargoPluginExtension.containerId)
             task.port.set(cargoPluginExtension.port)
-            task.deployables.set(cargoPluginExtension.deployables)
+            task.deployables.convention(cargoPluginExtension.deployables)
             task.timeout.set(cargoPluginExtension.timeout)
         })
     }
@@ -97,7 +97,7 @@ class CargoBasePlugin implements Plugin<Project> {
         project.plugins.withType(WarPlugin, {
             WarPlugin warPlugin ->
                 project.tasks.withType(War, {
-                    AbstractArchiveTask war -> extension.deployables.add(createDeployableFromAbstract(project.objects, war))
+                    AbstractArchiveTask war -> extension.deployables.add(createDeployableFromAbstract(project, war))
                 })
         })
     }
@@ -109,15 +109,16 @@ class CargoBasePlugin implements Plugin<Project> {
         project.plugins.withType(EarPlugin, {
             EarPlugin warPlugin ->
                 project.tasks.withType(Ear, {
-                    AbstractArchiveTask ear -> extension.deployables.add(createDeployableFromAbstract(project.objects, ear))
+                    AbstractArchiveTask ear -> extension.deployables.add(createDeployableFromAbstract(project, ear))
                 })
         })
     }
 
     // Create a deployable and set file from archive task
-    private Deployable createDeployableFromAbstract(ObjectFactory objectFactory, AbstractArchiveTask archiveTask) {
-        def deployable = new Deployable(objectFactory)
-        deployable.file.set(archiveTask.getArchiveFile())
+    private Deployable createDeployableFromAbstract(Project project, AbstractArchiveTask archiveTask) {
+
+        def deployable = new Deployable(project.objects, project.layout)
+        deployable.setRegularFile(archiveTask.getArchiveFile())
         return deployable
     }
 }

@@ -25,6 +25,7 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
@@ -58,7 +59,7 @@ abstract class AbstractCargoContainerTask extends DefaultTask {
 
     @Input
     @Optional
-    String context
+    Property<String> context = project.objects.property(String)
 
     /**
      * The classpath containing the Cargo Ant tasks.

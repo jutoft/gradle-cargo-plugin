@@ -35,7 +35,7 @@ class AddDefaultDeployableSpec extends Specification {
 
         then:
         project.getExtensions().getByType(CargoPluginExtension).deployables.get().size() == 1
-        project.getExtensions().getByType(CargoPluginExtension).deployables.get().get(0).file.get().getAsFile().canonicalPath == project.tasks.withType(War).first().getArchiveFile().get().getAsFile().canonicalPath
+        project.getExtensions().getByType(CargoPluginExtension).deployables.get().get(0).file.canonicalPath == project.tasks.withType(War).first().getArchiveFile().get().getAsFile().canonicalPath
     }
 
     def "ear's path is added to deployable"() {
@@ -45,6 +45,6 @@ class AddDefaultDeployableSpec extends Specification {
 
         then:
         project.getExtensions().getByType(CargoPluginExtension).deployables.get().size() == 1
-        project.getExtensions().getByType(CargoPluginExtension).deployables.get().get(0).file.get().getAsFile().canonicalPath == project.tasks.withType(Ear).first().getArchiveFile().get().getAsFile().canonicalPath
+        project.getExtensions().getByType(CargoPluginExtension).deployables.get().get(0).file.canonicalPath == project.tasks.withType(Ear).first().getArchiveFile().get().getAsFile().canonicalPath
     }
 }

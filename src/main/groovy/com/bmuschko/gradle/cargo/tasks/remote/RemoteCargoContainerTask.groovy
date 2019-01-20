@@ -63,8 +63,8 @@ class RemoteCargoContainerTask extends AbstractCargoContainerTask {
         super.validateConfiguration()
 
         if(getAction() != UNDEPLOY_ACTION) {
-            getDeployables().each { deployable ->
-                if(deployable.file && !deployable.file.exists()) {
+            getDeployables().get().each { deployable ->
+                if(deployable.regularFile.present && !deployable.file.exists()) {
                     throw new InvalidUserDataException("Deployable "
                             + (deployable.file == null ? "null" : deployable.file.canonicalPath)
                             + " does not exist")
@@ -99,16 +99,16 @@ class RemoteCargoContainerTask extends AbstractCargoContainerTask {
                 getDeployables().each { Deployable deployable ->
                     DeployableType deployableType = DeployableTypeFactory.instance.getType(deployable.file.get())
 
-                    if(deployable.context) {
+                    if(deployable.context.present) {
                         // For the undeploy action do not set a file attribute
                         if(getAction() == UNDEPLOY_ACTION) {
                             ant.deployable(type: deployableType.type) {
-                                property(name: AbstractCargoContainerTask.CARGO_CONTEXT, value: deployable.context)
+                                property(name: AbstractCargoContainerTask.CARGO_CONTEXT, value: deployable.context.get())
                             }
                         }
                         else {
                             ant.deployable(type: deployableType.type, file: deployable.file) {
-                                property(name: AbstractCargoContainerTask.CARGO_CONTEXT, value: deployable.context)
+                                property(name: AbstractCargoContainerTask.CARGO_CONTEXT, value: deployable.context.get())
                             }
                         }
                     }

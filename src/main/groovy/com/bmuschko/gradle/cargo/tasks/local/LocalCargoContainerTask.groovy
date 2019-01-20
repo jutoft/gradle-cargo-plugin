@@ -209,16 +209,15 @@ class LocalCargoContainerTask extends AbstractCargoContainerTask {
 
                 setContainerSpecificProperties()
 
-                getDeployables().each { Deployable deployable ->
-                    // todo: help
+                getDeployables().get().each { Deployable deployable ->
                     DeployableType deployableType = DeployableTypeFactory.instance.getType(deployable.file)
 
-                    if(deployable.context) {
-                        ant.deployable(type: deployableType.type, file: deployable.file.get().asFile) {
+                    if(deployable.context.present) {
+                        ant.deployable(type: deployableType.type, file: deployable.file.asFile) {
                             ant.property(name: AbstractCargoContainerTask.CARGO_CONTEXT, value: deployable.context.get())
                         }
                     } else {
-                        ant.deployable(type: deployableType.type, file: deployable.file.get().asFile)
+                        ant.deployable(type: deployableType.type, file: deployable.file.asFile)
                     }
                     }
 
